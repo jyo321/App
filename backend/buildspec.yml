@@ -13,14 +13,7 @@ phases:
   pre_build:
     commands:
       - echo "Selected environment: $ENV"
-      - |
-        if [ "$ENV" = "dev" ]; then
-          echo "Loading DEV variables"
-          source env/dev.env
-        else
-          echo "Loading QA variables"
-          source env/qa.env
-        fi
+      - if [ "$ENV" = "dev" ]; then source env/dev.env; else source env/qa.env; fi
       - echo "ECR_REPOSITORY=$ECR_REPOSITORY"
       - echo "ECS_CLUSTER=$ECS_CLUSTER"
       - echo "ECS_SERVICE=$ECS_SERVICE"
