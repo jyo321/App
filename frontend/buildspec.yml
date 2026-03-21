@@ -12,20 +12,10 @@ phases:
 
   pre_build:
     commands:
-      - echo Selected ENV = $ENV
-
-      # Load environment file
-      - if [ "$ENV" = "dev" ]; then
-          echo Loading DEV config;
-          source ./env/dev.env;
-        else
-          echo Loading QA config;
-          source ./env/qa.env;
-        fi
-
-      # Debug (this is the important fix part)
-      - echo Bucket name is: $S3_BUCKET
-      - aws s3 ls
+      - echo ENV = $ENV
+      - if [ "$ENV" = "dev" ]; then source ./env/dev.env; else source ./env/qa.env; fi
+      - echo Bucket = $S3_BUCKET
+      - echo CloudFront = $CLOUDFRONT_ID
 
   build:
     commands:
@@ -37,7 +27,7 @@ phases:
       - echo Uploading build to S3
       - aws s3 sync build/ s3://$S3_BUCKET --delete --region us-east-1
 
-      - echo Invalidating CloudFront cache
+      - echo Invalidating CloudFront
       - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
 
 artifacts:
