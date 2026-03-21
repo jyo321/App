@@ -14,7 +14,7 @@ phases:
     commands:
       - echo "Environment selected = $ENV"
 
-      # Load env file
+      # Load environment file
       - if [ "$ENV" = "dev" ]; then
           echo "Loading DEV variables";
           source env/dev.env;
@@ -23,19 +23,17 @@ phases:
           source env/qa.env;
         fi
 
-      # Debug (you can remove later)
+      # Debug
       - echo "ECR_REPOSITORY = $ECR_REPOSITORY"
       - echo "ECS_CLUSTER   = $ECS_CLUSTER"
       - echo "ECS_SERVICE   = $ECS_SERVICE"
+      - echo "CONTAINER_NAME = $CONTAINER_NAME"
 
       # Login to ECR
       - echo Logging in to ECR
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
-
-      # Tag using commit id
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI
 
   build:
@@ -43,7 +41,6 @@ phases:
       - echo Building backend Docker image
       - cd backend
       - npm install
-
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:latest
@@ -54,9 +51,11 @@ phases:
       - docker push $ECR_URI:$IMAGE_TAG
       - docker push $ECR_URI:latest
 
-      - echo Deploying to ECS
-      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+      # Create imagedefinitions.json for CodePipeline ECS deploy
+      - echo Creating imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $ECR_URI:$IMAGE_TAG > imagedefinitions.json
+      - cat imagedefinitions.json
 
 artifacts:
   files:
-    - '**/*'
+    - imagedefinitions.json
