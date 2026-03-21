@@ -51,10 +51,13 @@ phases:
       - docker push $ECR_URI:$IMAGE_TAG
       - docker push $ECR_URI:latest
 
-      # Ensure imagedefinitions.json is in root directory
-      - cd ../  # go back to root
-      - echo "Creating imagedefinitions.json in root directory"
-      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $ECR_URI:$IMAGE_TAG > imagedefinitions.json
+      # Create valid imagedefinitions.json in root
+      - cd ../
+      - echo "Creating valid imagedefinitions.json"
+      - jq -n \
+          --arg name "$CONTAINER_NAME" \
+          --arg image "$ECR_URI:$IMAGE_TAG" \
+          '[{name: $name, imageUri: $image}]' > imagedefinitions.json
       - echo "Contents of imagedefinitions.json:"
       - cat imagedefinitions.json
 
