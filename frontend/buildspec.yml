@@ -3,6 +3,9 @@ version: 0.2
 phases:
   install:
     commands:
+      - echo Moving to frontend folder
+      - cd frontend
+
       - echo Installing dependencies
       - npm install
 
