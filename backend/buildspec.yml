@@ -7,40 +7,43 @@ env:
 phases:
   install:
     commands:
-      - echo Installing dependencies
+      - echo Installing tools
       - yum install -y jq
 
   pre_build:
     commands:
-      - echo ENV = $ENV
+      - echo "Environment selected = $ENV"
 
-      # Load environment file based on ENV
+      # Load env file
       - if [ "$ENV" = "dev" ]; then
-          echo Loading DEV environment;
+          echo "Loading DEV variables";
           source env/dev.env;
         else
-          echo Loading QA environment;
+          echo "Loading QA variables";
           source env/qa.env;
         fi
 
-      - echo Logging in to ECR
+      # Debug (you can remove later)
+      - echo "ECR_REPOSITORY = $ECR_REPOSITORY"
+      - echo "ECS_CLUSTER   = $ECS_CLUSTER"
+      - echo "ECS_SERVICE   = $ECS_SERVICE"
 
+      # Login to ECR
+      - echo Logging in to ECR
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
 
+      # Tag using commit id
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
 
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI
 
   build:
     commands:
-      - echo Moving to backend folder
+      - echo Building backend Docker image
       - cd backend
-
-      - echo Installing Node dependencies
       - npm install
 
-      - echo Building Docker image
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:latest
@@ -51,11 +54,8 @@ phases:
       - docker push $ECR_URI:$IMAGE_TAG
       - docker push $ECR_URI:latest
 
-      - echo Updating ECS service
-      - aws ecs update-service \
-        --cluster $ECS_CLUSTER \
-        --service $ECS_SERVICE \
-        --force-new-deployment
+      - echo Deploying to ECS
+      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
 
 artifacts:
   files:
