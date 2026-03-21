@@ -7,21 +7,14 @@ env:
 phases:
   install:
     commands:
-      - echo "Installing tools"
+      - echo Installing tools
       - yum install -y jq
 
   pre_build:
     commands:
       - echo "Selected environment: $ENV"
-      - |
-        # Load dev or qa environment variables
-        if [ "$ENV" = "dev" ]; then
-          echo "Loading DEV env"
-          source env/dev.env
-        else
-          echo "Loading QA env"
-          source env/qa.env
-        fi
+      - echo "Loading environment variables"
+      - if [ "$ENV" = "dev" ]; then source env/dev.env; else source env/qa.env; fi
       - echo "ECR_REPOSITORY=$ECR_REPOSITORY"
       - echo "ECS_CLUSTER=$ECS_CLUSTER"
       - echo "ECS_SERVICE=$ECS_SERVICE"
