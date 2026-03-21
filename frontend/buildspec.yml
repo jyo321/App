@@ -3,22 +3,21 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo Moving to frontend folder
-      - cd frontend
-
       - echo Installing dependencies
       - npm install
 
   pre_build:
     commands:
-      - echo Detecting branch
-      - echo $CODEBUILD_WEBHOOK_HEAD_REF
+      - echo ENV = $ENV
 
-      - if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == *"dev"* ]]; then
-          source ../env/dev.env;
+      - if [ "$ENV" = "dev" ]; then
+          source env/dev.env;
         else
-          source ../env/qa.env;
+          source env/qa.env;
         fi
+
+      - echo Bucket = $S3_BUCKET
+      - echo CloudFront = $CLOUDFRONT_ID
 
   build:
     commands:
