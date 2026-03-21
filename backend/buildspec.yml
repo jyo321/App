@@ -1,5 +1,9 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+
 phases:
   install:
     commands:
@@ -8,18 +12,17 @@ phases:
 
   pre_build:
     commands:
-      - echo Detecting branch
-      - echo $CODEBUILD_WEBHOOK_HEAD_REF
+      - echo Environment = $ENV
 
-      - echo Loading environment variables
-
-      - if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == *"dev"* ]]; then
+      # Load correct env file (dev or qa)
+      - if [ "$ENV" = "dev" ]; then
           source env/dev.env;
         else
           source env/qa.env;
         fi
 
       - echo Logging in to ECR
+
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
 
@@ -32,7 +35,7 @@ phases:
       - echo Moving to backend folder
       - cd backend
 
-      - echo Installing node dependencies
+      - echo Installing Node dependencies
       - npm install
 
       - echo Building Docker image
@@ -42,7 +45,7 @@ phases:
 
   post_build:
     commands:
-      - echo Pushing images to ECR
+      - echo Pushing image to ECR
       - docker push $ECR_URI:$IMAGE_TAG
       - docker push $ECR_URI:latest
 
