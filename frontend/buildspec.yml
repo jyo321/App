@@ -1,5 +1,9 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+
 phases:
   install:
     commands:
@@ -8,16 +12,23 @@ phases:
 
   pre_build:
     commands:
-      - echo ENV = $ENV
+      - echo Selected ENV = $ENV
 
+      # Load environment variables
       - if [ "$ENV" = "dev" ]; then
+          echo Loading DEV config;
           source env/dev.env;
         else
+          echo Loading QA config;
           source env/qa.env;
         fi
 
+      # Debug (keep this until it works)
       - echo Bucket = $S3_BUCKET
       - echo CloudFront = $CLOUDFRONT_ID
+
+      # Verify bucket exists
+      - aws s3 ls s3://$S3_BUCKET
 
   build:
     commands:
