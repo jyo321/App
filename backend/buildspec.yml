@@ -11,10 +11,12 @@ phases:
       - echo Detecting branch
       - echo $CODEBUILD_WEBHOOK_HEAD_REF
 
+      - echo Loading environment variables
+
       - if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == *"dev"* ]]; then
-          source ../env/dev.env;
+          source env/dev.env;
         else
-          source ../env/qa.env;
+          source env/qa.env;
         fi
 
       - echo Logging in to ECR
@@ -30,13 +32,18 @@ phases:
     commands:
       - echo Moving to backend folder
       - cd backend
+
+      - echo Installing node dependencies
       - npm install
+
+      - echo Building Docker image
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
       - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:latest
 
   post_build:
     commands:
+      - echo Pushing images to ECR
       - docker push $ECR_URI:$IMAGE_TAG
       - docker push $ECR_URI:latest
 
