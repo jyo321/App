@@ -12,12 +12,14 @@ phases:
 
   pre_build:
     commands:
-      - echo Environment = $ENV
+      - echo ENV = $ENV
 
-      # Load correct env file (dev or qa)
+      # Load environment file based on ENV
       - if [ "$ENV" = "dev" ]; then
+          echo Loading DEV environment;
           source env/dev.env;
         else
+          echo Loading QA environment;
           source env/qa.env;
         fi
 
