@@ -7,15 +7,15 @@ env:
 phases:
   install:
     commands:
-      - echo Installing dependencies
+      - echo Moving to frontend folder
+      - cd frontend
       - npm install
 
   pre_build:
     commands:
       - echo ENV = $ENV
-      - if [ "$ENV" = "dev" ]; then source ./env/dev.env; else source ./env/qa.env; fi
+      - if [ "$ENV" = "dev" ]; then source ../env/dev.env; else source ../env/qa.env; fi
       - echo Bucket = $S3_BUCKET
-      - echo CloudFront = $CLOUDFRONT_ID
 
   build:
     commands:
