@@ -12,33 +12,33 @@ phases:
 
   pre_build:
     commands:
-      - echo "Environment selected = $ENV"
+      - echo "Selected environment: $ENV"
 
-      # Load environment file
+      # Load environment variables
       - if [ "$ENV" = "dev" ]; then
-          echo "Loading DEV variables";
+          echo "Loading DEV env";
           source env/dev.env;
         else
-          echo "Loading QA variables";
+          echo "Loading QA env";
           source env/qa.env;
         fi
 
       # Debug
-      - echo "ECR_REPOSITORY = $ECR_REPOSITORY"
-      - echo "ECS_CLUSTER   = $ECS_CLUSTER"
-      - echo "ECS_SERVICE   = $ECS_SERVICE"
-      - echo "CONTAINER_NAME = $CONTAINER_NAME"
+      - echo "ECR_REPOSITORY=$ECR_REPOSITORY"
+      - echo "ECS_CLUSTER=$ECS_CLUSTER"
+      - echo "ECS_SERVICE=$ECS_SERVICE"
+      - echo "CONTAINER_NAME=$CONTAINER_NAME"
 
       # Login to ECR
-      - echo Logging in to ECR
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - echo Logging in to ECR
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_URI
 
   build:
     commands:
-      - echo Building backend Docker image
+      - echo Building Docker image
       - cd backend
       - npm install
       - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
@@ -47,19 +47,15 @@ phases:
 
   post_build:
     commands:
-      - echo Pushing Docker image to ECR
+      - echo Pushing Docker image
       - docker push $ECR_URI:$IMAGE_TAG
       - docker push $ECR_URI:latest
 
-      # Create valid imagedefinitions.json in root
+      # Generate valid imagedefinitions.json in the root
       - |
-        cd ../
-        echo "Creating valid imagedefinitions.json"
-        jq -n \
-          --arg name "$CONTAINER_NAME" \
-          --arg image "$ECR_URI:$IMAGE_TAG" \
-          '[{name: $name, imageUri: $image}]' > imagedefinitions.json
-        echo "Contents of imagedefinitions.json:"
+        echo "Creating imagedefinitions.json"
+        echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_URI:$IMAGE_TAG\"}]" > imagedefinitions.json
+        echo "Contents:"
         cat imagedefinitions.json
 
 artifacts:
