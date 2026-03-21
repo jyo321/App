@@ -37,6 +37,14 @@ phases:
 
   post_build:
     commands:
+      - echo ===== DEBUG START =====
+      - echo ENV = $ENV
+      - echo Bucket = $S3_BUCKET
+      - aws configure list
+      - aws s3 ls
+      - aws s3api get-bucket-location --bucket $S3_BUCKET
+      - echo ===== DEBUG END =====
+
       - echo Uploading build to S3
       - aws s3 sync build/ s3://$S3_BUCKET --delete
 
