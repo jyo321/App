@@ -1,0 +1,51 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing dependencies
+      - yum install -y jq
+
+  pre_build:
+    commands:
+      - echo Detecting branch
+      - echo $CODEBUILD_WEBHOOK_HEAD_REF
+
+      - if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == *"dev"* ]]; then
+          source ../env/dev.env;
+        else
+          source ../env/qa.env;
+        fi
+
+      - echo Logging in to ECR
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
+
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
+        | docker login --username AWS --password-stdin $ECR_URI
+
+  build:
+    commands:
+      - echo Moving to backend folder
+      - cd backend
+      - npm install
+      - docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
+      - docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_URI:latest
+
+  post_build:
+    commands:
+      - docker push $ECR_URI:$IMAGE_TAG
+      - docker push $ECR_URI:latest
+
+      - echo Updating ECS service
+      - aws ecs update-service \
+        --cluster $ECS_CLUSTER \
+        --service $ECS_SERVICE \
+        --force-new-deployment
+
+artifacts:
+  files:
+    - '**/*'
