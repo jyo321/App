@@ -1,4 +1,4 @@
-const API_URL ="https://d3dlczzys8rvr5.cloudfront.net";
+const API_URL =process.env.REACT_APP_API_URL;
 
 export const getMessage = async () => {
   try {

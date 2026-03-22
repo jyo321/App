@@ -7,15 +7,23 @@ env:
 phases:
   install:
     commands:
-      - echo Moving to frontend folder
+      - echo Installing dependencies
       - cd frontend
       - npm install
 
   pre_build:
     commands:
       - echo ENV = $ENV
-      - if [ "$ENV" = "dev" ]; then source ../env/dev.env; else source ../env/qa.env; fi
-      - echo Bucket = $S3_BUCKET
+
+      # Load correct env file
+      - if [ "$ENV" = "dev" ]; then
+          source ../env/dev.env;
+        else
+          source ../env/qa.env;
+        fi
+
+      - echo "API_URL = $REACT_APP_API_URL"
+      - echo "Bucket   = $S3_BUCKET"
 
   build:
     commands:
@@ -24,10 +32,10 @@ phases:
 
   post_build:
     commands:
-      - echo Uploading build to S3
-      - aws s3 sync build/ s3://$S3_BUCKET --delete --region us-east-1
+      - echo Uploading to S3
+      - aws s3 sync build/ s3://$S3_BUCKET --delete
 
-      - echo Invalidating CloudFront
+      - echo Invalidating CloudFront cache
       - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
 
 artifacts:
