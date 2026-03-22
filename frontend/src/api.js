@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL ="http://test-dev-1425348621.us-east-1.elb.amazonaws.com";
 
 export const getMessage = async () => {
   try {
