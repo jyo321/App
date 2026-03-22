@@ -1,4 +1,4 @@
-const API_URL ="https://test-dev-1425348621.us-east-1.elb.amazonaws.com";
+const API_URL ="https://d3dlczzys8rvr5.cloudfront.net";
 
 export const getMessage = async () => {
   try {
