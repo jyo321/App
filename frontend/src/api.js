@@ -1,4 +1,4 @@
-const API_URL ="http://test-dev-1425348621.us-east-1.elb.amazonaws.com";
+const API_URL ="http://test-dev-1425348621.us-east-1.elb.amazonaws.com/api/message";
 
 export const getMessage = async () => {
   try {
