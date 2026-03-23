@@ -1,24 +1,29 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+
 phases:
   install:
     commands:
-      - echo Moving to frontend folder
-      - cd frontend
-
       - echo Installing dependencies
+      - cd frontend
       - npm install
 
   pre_build:
     commands:
-      - echo Detecting branch
-      - echo $CODEBUILD_WEBHOOK_HEAD_REF
+      - echo ENV = $ENV
 
-      - if [[ "$CODEBUILD_WEBHOOK_HEAD_REF" == *"dev"* ]]; then
+      # Load correct env file
+      - if [ "$ENV" = "dev" ]; then
           source ../env/dev.env;
         else
           source ../env/qa.env;
         fi
+
+      - echo "API_URL = $REACT_APP_API_URL"
+      - echo "Bucket   = $S3_BUCKET"
 
   build:
     commands:
@@ -27,13 +32,11 @@ phases:
 
   post_build:
     commands:
-      - echo Uploading build to S3
+      - echo Uploading to S3
       - aws s3 sync build/ s3://$S3_BUCKET --delete
 
       - echo Invalidating CloudFront cache
-      - aws cloudfront create-invalidation \
-        --distribution-id $CLOUDFRONT_ID \
-        --paths "/*"
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
 
 artifacts:
   files:
